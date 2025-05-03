@@ -37,7 +37,11 @@
 		"eamodio.gitlens",
 		"mhutchie.git-graph",
 		// nice file icons from vscode icons team
-		"vscode-icons-team.vscode-icons"
+		"vscode-icons-team.vscode-icons",
+		
+	        "esbenp.prettier-vscode",
+	        "msjsdiag.vscode-react-native"
+      
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
