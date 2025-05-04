@@ -1,5 +1,20 @@
 FROM node:20
 
+
+# init for VS Code
+# RUN mkdir -p /root/workspace /root/.vscode-server 
+
+
+
+# Add vscode user and configure sudo
+RUN useradd -ms /bin/bash vscode && \
+    mkdir -p /etc/sudoers.d && \
+    echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/vscode && \
+    chmod 0440 /etc/sudoers.d/vscode
+
+# Set the working directory
+WORKDIR /workspace
+
 RUN apt-get update && apt-get install -y \
     android-sdk \
     openjdk-11-jdk \
@@ -22,20 +37,8 @@ ENV PATH="$PATH:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/tools:${ANDROID_H
 RUN sdkmanager --install "platforms;android-33" "build-tools;33.0.0" "platform-tools" --sdk_root=${ANDROID_HOME}
 RUN npm install -g expo-cli react-native-cli
 
-# init for VS Code
-# RUN mkdir -p /root/workspace /root/.vscode-server 
-
 # Install eslint typescript expo
 RUN npm install -g eslint typescript expo-cli @expo/ngrok@^4.1.0
-
-# Add vscode user and configure sudo
-RUN useradd -ms /bin/bash vscode && \
-    mkdir -p /etc/sudoers.d && \
-    echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/vscode && \
-    chmod 0440 /etc/sudoers.d/vscode
-
-# Set the working directory
-WORKDIR /workspace
 
 # Expose ports for React Native development
 EXPOSE 19000 19001 19002 8081
