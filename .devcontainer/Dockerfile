@@ -36,7 +36,8 @@ RUN useradd -ms /bin/bash vscode && \
 
 # Set the working directory
 WORKDIR /workspace
-
+RUN npm install -g expo-cli react-native-cli
+RUN npm install -g eslint typescript expo-cli @expo/ngrok@^4.1.0
 # Expose ports for React Native development
 EXPOSE 19000 19001 19002 8081
 
