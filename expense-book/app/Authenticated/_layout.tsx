@@ -1,29 +1,61 @@
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { Slot } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { createDrawerNavigator, DrawerNavigationProp } from '@react-navigation/drawer';
+import { Slot, useNavigation } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
+import { useTheme } from '../ThemeContext'; // Import the theme context
 import Account from './account';
 import Settings from './settings';
 
 const Drawer = createDrawerNavigator();
 
 export default function AuthenticatedLayout() {
+  const theme = useTheme(); // Access the theme
+
   return (
-    <Drawer.Navigator>
+    <Drawer.Navigator
+      screenOptions={{
+        drawerStyle: { backgroundColor: theme.colors.background }, // Drawer background color
+        drawerActiveTintColor: theme.colors.primary, // Active item color
+        drawerInactiveTintColor: theme.colors.textSecondary, // Inactive item color
+        headerStyle: { backgroundColor: theme.colors.primary }, // Header background color
+        headerTintColor: theme.colors.background, // Header text color
+      }}
+    >
       {/* Home Screen with Tabs */}
       <Drawer.Screen
-        name="Home"
-        options={{ headerShown: true, title: 'Home' }}
+        name="HomeTabs"
+        options={{
+          title: 'Home',
+          headerLeft: () => <DrawerToggleButton />, // Add drawer toggle button
+          headerTitle: 'Expense Book',
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" color={color} size={size} />
+          ),
+        }}
         component={HomeWrapper} // Use a wrapper to render nested routes
       />
       {/* Settings Screen */}
       <Drawer.Screen
         name="settings"
-        options={{ title: 'Settings' }}
+        options={{
+          title: 'Settings',
+          headerTitle: 'Expense Book',
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" color={color} size={size} />
+          ),
+        }}
         component={Settings} // Load the settings screen
       />
       {/* Account Screen */}
       <Drawer.Screen
         name="account"
-        options={{ title: 'Account' }}
+        options={{
+          title: 'Account',
+          headerTitle: 'Expense Book',
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" color={color} size={size} />
+          ),
+        }}
         component={Account} // Load the account screen
       />
     </Drawer.Navigator>
@@ -34,3 +66,14 @@ export default function AuthenticatedLayout() {
 function HomeWrapper() {
   return <Slot />;
 }
+
+// Drawer toggle button component
+const DrawerToggleButton = () => {
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
+
+  return (
+    <TouchableOpacity onPress={() => navigation.toggleDrawer()} style={{ marginLeft: 16 }}>
+      <Ionicons name="menu" size={24} color="white" />
+    </TouchableOpacity>
+  );
+};

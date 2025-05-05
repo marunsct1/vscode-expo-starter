@@ -1,21 +1,29 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import CountryPicker from 'react-native-country-picker-modal'; // Import country picker
+import { useTheme } from '../ThemeContext'; // Import the theme context
 
 export default function Signup() {
   const router = useRouter();
-  const [name, setName] = useState('');
+  const theme = useTheme(); // Access the theme
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('US'); // Default country code
+  const [callingCode, setCallingCode] = useState('1'); // Default calling code
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
     setLoading(true);
     try {
+      const fullPhoneNumber = `+${callingCode}${phoneNumber}`; // Concatenate country code and phone number
       const response = await fetch('https://expensebook-rea1.onrender.com/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password, phoneNumber: fullPhoneNumber }),
       });
 
       if (response.ok) {
@@ -33,30 +41,88 @@ export default function Signup() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Text
+        style={[
+          styles.title,
+          { color: theme.colors.primary, fontSize: theme.typography.fontSize.heading },
+        ]}
+      >
+        User Information
+      </Text>
       <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
+        style={[
+          styles.input,
+          { borderColor: theme.colors.inputBorder, color: theme.colors.textPrimary },
+        ]}
+        placeholder="First Name"
+        placeholderTextColor={theme.colors.textSecondary}
+        value={firstName}
+        onChangeText={setFirstName}
       />
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          { borderColor: theme.colors.inputBorder, color: theme.colors.textPrimary },
+        ]}
+        placeholder="Last Name"
+        placeholderTextColor={theme.colors.textSecondary}
+        value={lastName}
+        onChangeText={setLastName}
+      />
+      <TextInput
+        style={[
+          styles.input,
+          { borderColor: theme.colors.inputBorder, color: theme.colors.textPrimary },
+        ]}
         placeholder="Email"
+        placeholderTextColor={theme.colors.textSecondary}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          { borderColor: theme.colors.inputBorder, color: theme.colors.textPrimary },
+        ]}
         placeholder="Password"
+        placeholderTextColor={theme.colors.textSecondary}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title={loading ? 'Signing up...' : 'Sign Up'} onPress={handleSignup} disabled={loading} />
+      <View style={[styles.phoneContainer, { borderColor: theme.colors.inputBorder }]}>
+        <CountryPicker
+          countryCode={countryCode}
+          withFilter
+          withFlag={true} // Disable flag display
+          withCallingCode // Enable phone code display
+          withCountryNameButton={false} // Disable country name display
+          onSelect={(country) => {
+            setCountryCode(country.cca2);
+            setCallingCode(country.callingCode[0]);
+          }}
+        />
+        <TextInput
+          style={[
+            styles.phoneInput,
+            { color: theme.colors.textPrimary },
+          ]}
+          placeholder="Phone Number"
+          placeholderTextColor={theme.colors.textSecondary}
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
+        />
+      </View>
+      <Button
+        title={loading ? 'Signing up...' : 'Sign Up'}
+        onPress={handleSignup}
+        disabled={loading}
+        color={theme.colors.primary} // Apply theme color to the button
+      />
     </View>
   );
 }
@@ -68,17 +134,28 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 24,
+    fontWeight: 'bold', // Keep bold styling
+    marginBottom: 20,
+    textAlign: 'center', // Center-align the title for better UI
   },
   input: {
     height: 40,
-    borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 12,
     paddingHorizontal: 8,
     borderRadius: 4,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 4,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+  },
+  phoneInput: {
+    flex: 1,
+    height: 40,
+    marginLeft: 8,
   },
 });
