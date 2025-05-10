@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../ThemeContext';
+import { fetchWithoutAuth, setToken } from '../authContext';
 
 export default function Login() {
   const router = useRouter();
@@ -16,9 +17,8 @@ export default function Login() {
     setLoading(true);
     try {
       console.log('Logging in with:', { email, password });
-      const response = await fetch('https://expensebook-rea1.onrender.com/login', {
+      const response = await fetchWithoutAuth('/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -26,8 +26,9 @@ export default function Login() {
       console.log('Login response:', data);
       // Check if the response is ok (status code 200-299)
       if (response.ok) {
+        console.log('Login successful:', data);
         // Save token to AsyncStorage
-        await AsyncStorage.setItem('token', data.token);
+        setToken(data.token);
 
         // Check if biometric authentication is available
         const hasBiometricHardware = await LocalAuthentication.hasHardwareAsync();

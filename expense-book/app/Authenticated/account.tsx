@@ -1,17 +1,23 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../ThemeContext'; // Import the theme context
+import { removeToken } from '../authContext'; // Import the removeToken function
+
 export default function Account() {
     const router = useRouter();
-
+    const theme = useTheme(); // Access the theme
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('token'); // Clear the token
+    removeToken(); // Clear the token
     router.replace('/Unauthenticated/login'); // Redirect to login screen
   };
   return (
-    <View style={styles.container}>
-      <Text>Account Screen</Text>
-      <Button title="Logout" onPress={handleLogout} />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Account Screen</Text>
+      <Button
+        title="Logout"
+        onPress={handleLogout}
+        color={theme.colors.primary} // Apply theme color to the button
+      />
     </View>
   );
 }
@@ -21,5 +27,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
 });
