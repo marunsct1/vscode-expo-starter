@@ -72,15 +72,18 @@ const authHeaders = async () => {
  */
 const fetchWithAuth = async (url: string, options: RequestInit) => {
     const token = await getToken();
+    console.log('Token:', token);
     const apiKey = await getLocalApiKey();
-    return fetch( baseUrl + url, {
+    const optionsReq = {
         ...options,
         headers: {
             ...options.headers,
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
             'x-api-key': apiKey   },
-    });
+    }
+    console.log('Options:', optionsReq);
+    return fetch( baseUrl + url, optionsReq);
 };
 
 /**
@@ -132,7 +135,7 @@ const fetchWithTimeout = async (url: string, options: RequestInit) => {
   }
 };
 
-export { authHeaders, fetchWithAuth, fetchWithoutAuth, getApiKey, getLocalApiKey, getToken, removeToken, setToken, fetchWithTimeout };
+export { authHeaders, fetchWithAuth, fetchWithoutAuth, fetchWithTimeout, getApiKey, getLocalApiKey, getToken, removeToken, setToken };
 // This function fetches the API key from the server using the token
 // and stores it in local storage. It is called when the token is set.
 // The API key is used for making authenticated requests to the server.

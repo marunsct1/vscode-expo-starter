@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
+import { clearUserData } from '../../database/db'; // Adjust the import path as necessary
 import { useTheme } from '../ThemeContext'; // Import the theme context
 import { removeToken } from '../authContext'; // Import the removeToken function
 
@@ -8,6 +9,7 @@ export default function Account() {
     const theme = useTheme(); // Access the theme
   const handleLogout = async () => {
     removeToken(); // Clear the token
+    clearUserData(); // Clear user data from the database
     router.replace('/Unauthenticated/login'); // Redirect to login screen
   };
   return (

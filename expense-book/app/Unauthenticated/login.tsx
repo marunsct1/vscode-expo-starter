@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { saveUser } from '../../database/db'; // Adjust the import path as necessary
 import { useTheme } from '../ThemeContext';
 import { fetchWithoutAuth, setToken } from '../authContext';
 
@@ -26,10 +27,11 @@ export default function Login() {
       console.log('Login response:', data);
       // Check if the response is ok (status code 200-299)
       if (response.ok) {
-        console.log('Login successful:', data);
+        console.log('Login successful:');
         // Save token to AsyncStorage
         setToken(data.token);
-
+        let user = { ...data.user, token: data.token }; // Assuming the token is part of the user object 
+        await saveUser(user); // Save user to the database
         // Check if biometric authentication is available
         const hasBiometricHardware = await LocalAuthentication.hasHardwareAsync();
         const isBiometricEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -47,8 +49,8 @@ export default function Login() {
           });
 
           if (enableBiometric) {
-            await AsyncStorage.setItem('useBiometric', 'true');
-            Alert.alert('Biometric Authentication Enabled', 'You can now use biometrics to log in.');
+            AsyncStorage.setItem('useBiometric', 'true');
+            //Alert.alert('Biometric Authentication Enabled', 'You can now use biometrics to log in.');
           }
         }
 

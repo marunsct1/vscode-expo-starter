@@ -3,7 +3,9 @@ import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 import { Slot } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Provider } from 'react-redux';
 import { ThemeProvider } from '../app/ThemeContext';
+import { store } from './store'; // Adjust the import path as necessary
 
 export default function RootLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -13,33 +15,31 @@ export default function RootLayout() {
       const token = await AsyncStorage.getItem('token');
       setIsLoggedIn(!!token); // Set login status based on token presence
     };
-
     checkLoginStatus();
   }, []);
 
-  if (isLoggedIn === null) {
-    // Show a loading indicator while checking login status
-    return (
-      <LinearGradient
-        colors={['#4CAF50', '#2196F3']} // Gradient colors (green to blue)
-        style={styles.gradient}
-      >
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
-        </View>
-      </LinearGradient>
-    );
-  }
-
   return (
-    <ThemeProvider>
-      <LinearGradient
-        colors={['#4CAF50', '#2196F3']} // Gradient colors (green to blue)
-        style={styles.gradient}
-      >
-        <Slot />
-      </LinearGradient>
-    </ThemeProvider>
+    <Provider store={store}>
+      {isLoggedIn === null ? (
+        <LinearGradient
+          colors={['#4CAF50', '#2196F3']}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          </View>
+        </LinearGradient>
+      ) : (
+        <ThemeProvider>
+          <LinearGradient
+            colors={['#4CAF50', '#2196F3']}
+            style={styles.gradient}
+          >
+            <Slot />
+          </LinearGradient>
+        </ThemeProvider>
+      )}
+    </Provider>
   );
 }
 

@@ -3,12 +3,15 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+import { initializeDatabase } from '../database/db'; // Adjust the import path as necessary
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
     const checkLoginStatus = async () => {
+      console.log('opening DB...');
+      initializeDatabase(); // Initialize the database
       const token = await AsyncStorage.getItem('token'); // Check if token exists
       const useBiometric = await AsyncStorage.getItem('useBiometric'); // Check if biometric is enabled
 

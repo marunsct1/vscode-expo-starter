@@ -1,64 +1,91 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createDrawerNavigator, DrawerNavigationProp } from '@react-navigation/drawer';
 import { Slot, useNavigation } from 'expo-router';
+import { useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { getUser } from '../../database/db';
+import { setUser } from '../../features/context/contextSlice';
 import { useTheme } from '../ThemeContext'; // Import the theme context
 import Account from './account';
 import Settings from './settings';
-
 const Drawer = createDrawerNavigator();
 
 export default function AuthenticatedLayout() {
   const theme = useTheme(); // Access the theme
+  const user = useSelector((state: any) => state.context.user)
+  const dispatch = useDispatch()
+  useEffect(() => {
+    // This effect runs when the component mounts
+    // You can perform any side effects here, such as fetching data or setting up subscriptions
+    const setUserInRedux = async () => { 
+    try {
+      if (user.user_id === undefined) {
 
+        const dbUser = await getUser();
+        if (dbUser) {
+          console.log('User found in DB:', dbUser.userId);
+          dispatch(setUser(dbUser));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+
+    }
+  };
+    setUserInRedux();
+  }, []);
   return (
-    <Drawer.Navigator
-      screenOptions={{
-        drawerStyle: { backgroundColor: theme.colors.background }, // Drawer background color
-        drawerActiveTintColor: theme.colors.primary, // Active item color
-        drawerInactiveTintColor: theme.colors.textSecondary, // Inactive item color
-        headerStyle: { backgroundColor: theme.colors.primary }, // Header background color
-        headerTintColor: theme.colors.background, // Header text color
-      }}
-    >
-      {/* Home Screen with Tabs */}
-      <Drawer.Screen
-        name="HomeTabs"
-        options={{
-          title: 'Home',
-          headerLeft: () => <DrawerToggleButton />, // Add drawer toggle button
-          headerTitle: 'Expense Book',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" color={color} size={size} />
-          ),
+
+      <Drawer.Navigator
+        screenOptions={{
+          drawerStyle: { backgroundColor: theme.colors.background }, // Drawer background color
+          drawerActiveTintColor: theme.colors.primary, // Active item color
+          drawerInactiveTintColor: theme.colors.textSecondary, // Inactive item color
+          headerStyle: { backgroundColor: theme.colors.primary }, // Header background color
+          headerTintColor: theme.colors.background, // Header text color
         }}
-        component={HomeWrapper} // Use a wrapper to render nested routes
-      />
-      {/* Settings Screen */}
-      <Drawer.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          headerTitle: 'Expense Book',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" color={color} size={size} />
-          ),
-        }}
-        component={Settings} // Load the settings screen
-      />
-      {/* Account Screen */}
-      <Drawer.Screen
-        name="account"
-        options={{
-          title: 'Account',
-          headerTitle: 'Expense Book',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" color={color} size={size} />
-          ),
-        }}
-        component={Account} // Load the account screen
-      />
-    </Drawer.Navigator>
+      >
+        {/* Home Screen with Tabs */}
+        <Drawer.Screen
+          name="HomeTabs"
+          options={{
+            title: 'Home',
+            headerLeft: () => <DrawerToggleButton />, // Add drawer toggle button
+            headerTitle: 'Expense Book',
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="home-outline" color={color} size={size} />
+            ),
+          }}
+          component={HomeWrapper} // Use a wrapper to render nested routes
+        />
+        {/* Settings Screen */}
+        <Drawer.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            headerTitle: 'Expense Book',
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="settings-outline" color={color} size={size} />
+            ),
+          }}
+          component={Settings} // Load the settings screen
+        />
+        {/* Account Screen */}
+        <Drawer.Screen
+          name="account"
+          options={{
+            title: 'Account',
+            headerTitle: 'Expense Book',
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" color={color} size={size} />
+            ),
+          }}
+          component={Account} // Load the account screen
+        />
+      </Drawer.Navigator>
+  
+
   );
 }
 
