@@ -36,6 +36,13 @@ export const initializeDatabase = async () => {
         email TEXT,
         phone TEXT
       );`,
+      `CREATE TABLE IF NOT EXISTS balance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId TEXT UNIQUE,
+        name TEXT,
+        currency TEXT,
+        balance REAL
+      );`,
       `CREATE TABLE IF NOT EXISTS expenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         userId TEXT,
@@ -75,12 +82,12 @@ export const saveUser = async (user: { id: string; username: string; first_name:
   }
 };
 
-export const saveFriends = async (friends: { userId: string; name: string; email: string }[]) => {
+export const saveFriends = async (friends: { id: string; first_name: string; last_name: string; username: string; phone: string; email: string }[]) => {
   await db.withTransactionAsync(async () => {
     for (const friend of friends) {
       await db.runAsync(
-        `INSERT OR REPLACE INTO friends (userId, name, email) VALUES (?, ?, ?);`,
-        [friend.userId, friend.name, friend.email]
+        `INSERT OR REPLACE INTO friends (userId, username, first_name, last_name, email, phone) VALUES (?, ?, ?,?,?,?);`,
+        [friend.id, friend.username, friend.first_name, friend.last_name, friend.email, friend.phone]
       );
     }
   });
@@ -97,7 +104,42 @@ export const getFriends = async (): Promise<any[]> => {
   }
   return friends;
 };
+export const saveBalance = async (balances: { user_id: string; currency: string; balance: number }[]) => {
+  try {
+    await db.withTransactionAsync(async () => {
+      for (const balance of balances) {
+        // Fetch the name from the friends table using the user_id
+        const result:{name:string} = (await db.getFirstAsync(
+          `SELECT first_name || ' ' || last_name AS name FROM friends WHERE userId = ?;`,
+          [balance.user_id]
+        )) || { name: '' };
 
+        const name = result.name || ''; // Default to 'Unknown' if no name is found
+
+        // Insert or replace the balance with the fetched name
+        await db.runAsync(
+          `INSERT OR REPLACE INTO balance (userId, name, currency, balance) VALUES (?, ?, ?, ?);`,
+          [balance.user_id, name, balance.currency, balance.balance]
+        );
+      }
+    });
+    console.log('Balances saved successfully');
+  } catch (error) {
+    console.error('Error saving balances:', error);
+  }
+};
+export const getBalance = async (): Promise<{ totalBalance: { Amount: number; Currency: string }[]; userBalance: { id: string; name: string; balances: { currency: string; amount: number }[] }[] }> => {
+  let balance: { totalBalance: { Amount: number; Currency: string }[]; userBalance: { id: string; name: string; balances: { currency: string; amount: number }[] }[] } = { totalBalance: [], userBalance: [] };
+  try {
+    await db.withTransactionAsync(async () => {
+      const result = await db.getAllAsync(`SELECT * FROM balance;`) as { id: string; userId:string; name: string; currency: string; amount: number }[];
+      balance = await convertToBalanceFormat(result) as { totalBalance: { Amount: number; Currency: string }[]; userBalance: { id: string; name: string; balances: { currency: string; amount: number }[] }[] };
+    });
+  } catch (error) {
+    console.error("Error fetching balance:", error);
+  }
+  return balance;
+};
 
 export const getUser = async (): Promise<any> => {
   let user = null;
@@ -121,3 +163,29 @@ export const clearUserData = async () => {
     await db.execAsync(`DELETE FROM expenses;`);
   });
 };
+
+const convertToBalanceFormat = async (data: { id: string; userId: string; name: string; currency: string; amount: number }[]) =>{
+  // Group by user for userBalance
+  const userMap: Record<string, { id: string; name: string; balances: { currency: string; amount: number }[] }> = {};
+  // Group by currency for totalBalance
+  const currencyMap: Record<string, number> = {};
+
+  data.forEach(item => {
+    // Build userBalance
+    if (!userMap[item.userId]) {
+      userMap[item.userId] = { id: item.userId, name: item.name, balances: [] };
+    }
+    userMap[item.userId].balances.push({ currency: item.currency, amount: item.amount });
+
+    // Build totalBalance
+    if (!currencyMap[item.currency]) {
+      currencyMap[item.currency] = 0;
+    }
+    currencyMap[item.currency] += item.amount;
+  });
+
+  const userBalance = Object.values(userMap);
+  const totalBalance = Object.entries(currencyMap).map(([Currency, Amount]) => ({ Amount, Currency }));
+
+  return { totalBalance, userBalance };
+}
