@@ -1,0 +1,11 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+  "ghcr.io/casl0/devcontainer-features/android-sdk:1": {},
+  "ghcr.io/nordcominc/devcontainer-features/android-sdk:1": {},
+  "ghcr.io/devcontainers-extra/features/expo-cli:1": {},
+  "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {},
+  "ghcr.io/devcontainers/features/node:1": {},
+  "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}
