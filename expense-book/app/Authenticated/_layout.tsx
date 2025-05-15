@@ -1,3 +1,4 @@
+import fetchApiData from '@/features/backend/initialDataAPIFetch';
 import { Ionicons } from '@expo/vector-icons';
 import { createDrawerNavigator, DrawerNavigationProp } from '@react-navigation/drawer';
 import { Slot, useNavigation } from 'expo-router';
@@ -9,32 +10,14 @@ import { setUser } from '../../features/context/contextSlice';
 import { useTheme } from '../ThemeContext'; // Import the theme context
 import Account from './account';
 import Settings from './settings';
+'../../features/backend/initialDataAPIFetch';
 const Drawer = createDrawerNavigator();
 
 export default function AuthenticatedLayout() {
   const theme = useTheme(); // Access the theme
   const user = useSelector((state: any) => state.context.user)
   const dispatch = useDispatch()
-  useEffect(() => {
-    // This effect runs when the component mounts
-    // You can perform any side effects here, such as fetching data or setting up subscriptions
-    const setUserInRedux = async () => { 
-    try {
-      if (user.user_id === undefined) {
 
-        const dbUser = await getUser();
-        if (dbUser) {
-          console.log('User found in DB:', dbUser.userId);
-          dispatch(setUser(dbUser));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-
-    }
-  };
-    setUserInRedux();
-  }, []);
   return (
 
       <Drawer.Navigator

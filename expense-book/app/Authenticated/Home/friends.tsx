@@ -1,109 +1,136 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../ThemeContext';
-import { fetchWithAuth } from '../../authContext';
 
-// Example: totalBalance is now an array of objects
-const totalBalance = [
-  { Amount: 50, Currency: 'CAD' },
-  { Amount: -50, Currency: 'USD' },
-];
-
-const expenses = {
-  users: [
-    {
-      id: '1',
-      name: 'Alice',
-      balances: [
-        { currency: 'USD', amount: 50 },
-        { currency: 'EUR', amount: 20 },
-      ],
-    },
-    {
-      id: '2',
-      name: 'Bob',
-      balances: [
-        { currency: 'USD', amount: -100 },
-      ],
-    },
-    {
-      id: '3',
-      name: 'Charlie',
-      balances: [
-        { currency: 'EUR', amount: 200 },
-      ],
-    },
-  ],
+// Helper to get currency symbol
+const getCurrencySymbol = (currency: string) => {
+  switch (currency) {
+    case 'USD': return '$';
+    case 'EUR': return '€';
+    case 'CAD': return 'C$';
+    case 'INR': return '₹';
+    case 'GBP': return '£';
+    case 'AUD': return 'A$';
+    case 'JPY': return '¥';
+    case 'CNY': return '¥';
+    case 'CHF': return 'CHF';
+    case 'NZD': return 'NZ$';
+    case 'ZAR': return 'R';
+    case 'BRL': return 'R$';
+    case 'MXN': return '$';
+    case 'SGD': return 'S$';
+    case 'HKD': return 'HK$';
+    case 'KRW': return '₩';
+    case 'SEK': return 'kr';
+    case 'NOK': return 'kr';
+    case 'DKK': return 'kr';
+    case 'PLN': return 'zł';
+    case 'RUB': return '₽';
+    case 'TRY': return '₺';
+    case 'THB': return '฿';
+    case 'IDR': return 'Rp';
+    case 'MYR': return 'RM';
+    case 'PHP': return '₱';
+    case 'VND': return '₫';
+    case 'EGP': return '£';
+    case 'ARS': return '$';
+    case 'CLP': return '$';
+    case 'COP': return '$';
+    case 'PEN': return 'S/.';
+    case 'UYU': return '$U';
+    default: return currency;
+  }
 };
 
 export default function Friends() {
   const theme = useTheme();
-  const [balance, setBalance] = useState([]);
+  interface BalanceEntry {
+    Amount: number;
+    Currency: string;
+  }
+
+  interface UserBalance {
+    id: string;
+    name: string;
+    balances: { currency: string; amount: number }[];
+  }
+
+  const [totBalance, settotBalance] = useState<{
+    totalBalance: BalanceEntry[];
+    userBalance: UserBalance[];
+  }>({ totalBalance: [], userBalance: [] });
   const user = useSelector((state: any) => state.context.user);
+  const Balance = useSelector((state: any) => state.context.totalExpenses);
 
   useEffect(() => {
     if (user) {
       console.log('User loaded in Friends:', user.userId);
     }
-  }, []);
+    settotBalance(Balance);
+    console.log('Total balance loaded in Friends:', Balance);
+  }, [Balance]);
 
-  useEffect(() => {
-    try {
-      const fetchData = async () => {
-        console.log('Fetching data...', user.userId);
-        if (user.userId !== undefined) {
-          const fetchBalanceSRV = await fetchWithAuth('/users/' + user.userId + '/balances', {
-            method: 'GET',
-          });
-          console.log('Balance fetch response:', fetchBalanceSRV);
-          if (fetchBalanceSRV.ok) {
-            const data = await fetchBalanceSRV.json();
-            console.log('Balance data:', data);
-            if (data.length > 0) {
-              setBalance(data);
-            }
-          } else {
-            console.log('Error fetching balance:', fetchBalanceSRV.status);
-          }
-        } else {
-          console.log('User ID is undefined');
-        }
-      };
-      fetchData();
-    } catch (error) {
-      console.error('Error in useEffect:', error);
-    }
-  }, [user]);
-
-  // Helper to determine if the amount is owed or to be received
-  const getLabel = (amount: number) => (amount > 0 ? 'You are Owed' : 'You Owe');
+  // Prepare "You Owe" and "You are Owed" lists
+  const youOwe = totBalance.totalBalance
+    ? totBalance.totalBalance.filter((entry) => entry.Amount < 0)
+    : [];
+  const youAreOwed = totBalance.totalBalance
+    ? totBalance.totalBalance.filter((entry) => entry.Amount > 0)
+    : [];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.totalContainer}>
-        <Text style={styles.totalLabel}>Total</Text>
-        {totalBalance.map((entry, idx) => (
-          <View key={entry.Currency} style={styles.totalRow}>
-            <Text style={styles.totalType}>
-              {getLabel(entry.Amount)}
-            </Text>
-            <Text
-              style={[
-                styles.totalAmount,
-                { color: entry.Amount > 0 ? theme.colors.primary : theme.colors.accent },
-              ]}
-            >
-              {entry.Currency} {entry.Amount > 0 ? `+${entry.Amount}` : entry.Amount}
-            </Text>
-          </View>
-        ))}
+      <View style={styles.totalContainerRow}>
+        {/* Left: Only "Total Balance" text */}
+        <View style={styles.totalLabelContainerLeft}>
+          <Text style={styles.totalLabelLeft}>Total Balance</Text>
+        </View>
+        {/* Right: You Owe & You are Owed stacked */}
+        <View style={styles.rightBalancesContainer}>
+          {youOwe.length > 0 && (
+            <View style={{ marginBottom: youAreOwed.length > 0 ? 4 : 0 }}>
+              {youOwe.map((entry) => (
+                <Text
+                  key={'owe-' + entry.Currency}
+                  style={[
+                    styles.totalType,
+                    { color: theme.colors.accent, textAlign: 'right' },
+                  ]}
+                >
+                  You Owe: {getCurrencySymbol(entry.Currency)} {Math.abs(entry.Amount)}
+                </Text>
+              ))}
+            </View>
+          )}
+          {youAreOwed.length > 0 && (
+            <View>
+              {youAreOwed.map((entry) => (
+                <Text
+                  key={'owed-' + entry.Currency}
+                  style={[
+                    styles.totalType,
+                    { color: theme.colors.primary, textAlign: 'right' },
+                  ]}
+                >
+                  You are Owed: {getCurrencySymbol(entry.Currency)} {entry.Amount}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
       <FlatList
-        data={expenses.users}
+        data={totBalance.userBalance}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.userItemContainer} activeOpacity={0.8}>
+          <View style={styles.userItemContainer}>
+            {/* Avatar: Use a placeholder circle if no image */}
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {item.name ? item.name.charAt(0).toUpperCase() : '?'}
+              </Text>
+            </View>
             <View style={styles.userNameContainer}>
               <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>{item.name}</Text>
             </View>
@@ -116,14 +143,15 @@ export default function Friends() {
                       { color: bal.amount > 0 ? theme.colors.primary : theme.colors.accent },
                     ]}
                   >
-                    {bal.currency} {bal.amount > 0 ? `+${bal.amount}` : bal.amount}
+                    {getCurrencySymbol(bal.currency)} {bal.amount > 0 ? `+${bal.amount}` : bal.amount}
                   </Text>
                 </View>
               ))}
             </View>
-          </TouchableOpacity>
+          </View>
         )}
         contentContainerStyle={styles.listContainer}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
     </View>
   );
@@ -134,45 +162,59 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  totalContainer: {
+  totalContainerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
+    minHeight: 48,
+  },
+  totalLabelContainerLeft: {
+    flex: 2,
+    justifyContent: 'center',
     alignItems: 'flex-start',
   },
-  totalLabel: {
+  totalLabelLeft: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
     color: '#444',
+    textAlign: 'left',
   },
-  totalRow: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    marginBottom: 4,
+  rightBalancesContainer: {
+    flex: 3,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   totalType: {
     fontSize: 15,
     fontWeight: '600',
     color: '#666',
   },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 0,
-  },
   listContainer: {
-    paddingVertical: 8,
+    paddingVertical: 0,
   },
   userItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#bbb',
-    backgroundColor: 'rgba(0,0,0,0.03)',
     paddingVertical: 14,
-    paddingHorizontal: 18,
-    marginBottom: 10,
+    paddingHorizontal: 0,
+    borderBottomWidth: 0.5, // reduced by 50%
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: 'transparent',
+  },
+  avatar: {
+    width: 50.4, // 36 * 1.4
+    height: 50.4, // 36 * 1.4
+    borderRadius: 25.2, // 18 * 1.4
+    backgroundColor: '#bbb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   userNameContainer: {
     flex: 1,
@@ -192,5 +234,10 @@ const styles = StyleSheet.create({
   userAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  separator: {
+    height: 0.5, // reduced by 50%
+    backgroundColor: '#e0e0e0',
+    marginLeft: 48, // aligns with text, not avatar
   },
 });

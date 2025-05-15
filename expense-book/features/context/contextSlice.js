@@ -7,7 +7,7 @@ const initialState = {
   expense_id: [],
   groups:[],
   group_images: [],
-  totalExpenses: [],
+  totalExpenses: {},
 }
 
 export const fetchContext = createSlice({

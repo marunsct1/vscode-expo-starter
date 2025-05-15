@@ -1,22 +1,52 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { getFriends, initializeDatabase } from '../database/db'; // Adjust the import path as necessary
-import { fetchWithAuth } from './authContext';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { getUser, initializeDatabase } from '../database/db';
+import fetchApiData from '../features/backend/initialDataAPIFetch';
+import { setUserAndGetState } from '../features/context/contextThunks';
+import { getApiKey } from './authContext';
+import { store } from './store';
 
-export default function Home() {
+function AppContent() {
   const router = useRouter();
-  
+  const user = useSelector((state: any) => state.context.user); // Fix typing
+  const dispatch = useDispatch();
+
+  const setUserInRedux = async () => {
+    try {
+      if (!user.userId && !user.user_id) {
+        const dbUser = await getUser();
+        if (dbUser) {
+          console.log('User found in DB:', dbUser.userId || dbUser.user_id);
+          // Set user in Redux store and get updated user
+          const reduxUser = await dispatch<any>(setUserAndGetState(dbUser));
+          console.log('User sent to Redux:', reduxUser.userId || reduxUser.user_id);
+          // Fetch API data after setting user in Redux
+          await fetchApiData(dispatch, reduxUser);
+        } else {
+          await fetchApiData(dispatch, user);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  };
+
   useEffect(() => {
     const checkLoginStatus = async () => {
       console.log('opening DB...');
-      initializeDatabase(); // Initialize the database
+      await initializeDatabase(); // Initialize the database
+
       const token = await AsyncStorage.getItem('token'); // Check if token exists
       const useBiometric = await AsyncStorage.getItem('useBiometric'); // Check if biometric is enabled
 
       if (token) {
+        await getApiKey(token);
+        await setUserInRedux(); // Fetch the API key and set user
+
         if (useBiometric === 'true') {
           // Perform biometric authentication
           const hasBiometricHardware = await LocalAuthentication.hasHardwareAsync();
@@ -55,14 +85,22 @@ export default function Home() {
         router.replace('/Unauthenticated/login'); // Redirect to login if no token is found
       }
     };
-
     checkLoginStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <View style={styles.container}>
       <Text>Loading...</Text>
     </View>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
-import CountryPicker from 'react-native-country-picker-modal'; // Import country picker
+import CountryPicker, { CountryCode } from 'react-native-country-picker-modal'; // Import country picker and CountryCode type
 import { useTheme } from '../ThemeContext'; // Import the theme context
 
 export default function Signup() {
@@ -12,7 +12,7 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [countryCode, setCountryCode] = useState('US'); // Default country code
+  const [countryCode, setCountryCode] = useState<CountryCode>('US'); // Default country code with explicit type
   const [callingCode, setCallingCode] = useState('1'); // Default calling code
   const [loading, setLoading] = useState(false);
 

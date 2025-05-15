@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for icons
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useTheme } from '../../ThemeContext'; // Import the theme context
 
 export default function TabLayout() {
   const theme = useTheme(); // Access the theme
   const user = useSelector((state:any) => state.context.user)
-  const dispatch = useDispatch()
+ // const dispatch = useDispatch()
   useEffect(() => {
     // This effect runs when the component mounts
     // You can perform any side effects here, such as fetching data or setting up subscriptions

@@ -1,9 +1,12 @@
+import { setUser } from '@/features/context/contextSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { saveUser } from '../../database/db'; // Adjust the import path as necessary
+import { useDispatch } from 'react-redux';
+import { getUser, saveUser } from '../../database/db'; // Adjust the import path as necessary
+import fetchApiData from '../../features/backend/initialDataAPIFetch';
 import { useTheme } from '../ThemeContext';
 import { fetchWithoutAuth, setToken } from '../authContext';
 
@@ -13,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useTheme();
+  const dispatch = useDispatch()
 
   const handleLogin = async () => {
     setLoading(true);
@@ -29,9 +33,14 @@ export default function Login() {
       if (response.ok) {
         console.log('Login successful:');
         // Save token to AsyncStorage
-        setToken(data.token);
+        await setToken(data.token);
         let user = { ...data.user, token: data.token }; // Assuming the token is part of the user object 
         await saveUser(user); // Save user to the database
+        user = await getUser(); // Fetch the user from the database
+        console.log('User dispatched to redux:', user.userId);
+        await dispatch(setUser(user)); // Update Redux store with user data
+        console.log('User saved to redux:', user.userId);
+        fetchApiData(dispatch, user); // Fetch initial data from the API
         // Check if biometric authentication is available
         const hasBiometricHardware = await LocalAuthentication.hasHardwareAsync();
         const isBiometricEnrolled = await LocalAuthentication.isEnrolledAsync();

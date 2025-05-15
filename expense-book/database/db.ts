@@ -95,6 +95,7 @@ export const saveFriends = async (friends: { id: string; first_name: string; las
 export const getFriends = async (): Promise<any[]> => {
   let friends: any[] = [];
   try {
+    console.log('Fetching friends from DB...');
     await db.withTransactionAsync(async () => {
       const result = await db.getAllAsync(`SELECT * FROM friends;`);
       friends = result;
@@ -102,6 +103,7 @@ export const getFriends = async (): Promise<any[]> => {
   } catch (error) {
     console.error("Error fetching friends:", error);
   }
+  console.log('Friends fetched:', friends.length);
   return friends;
 };
 export const saveBalance = async (balances: { user_id: string; currency: string; balance: number }[]) => {
@@ -110,7 +112,7 @@ export const saveBalance = async (balances: { user_id: string; currency: string;
       for (const balance of balances) {
         // Fetch the name from the friends table using the user_id
         const result:{name:string} = (await db.getFirstAsync(
-          `SELECT first_name || ' ' || last_name AS name FROM friends WHERE userId = ?;`,
+          `SELECT first_name AS name FROM friends WHERE userId = ?;`,
           [balance.user_id]
         )) || { name: '' };
 
@@ -132,12 +134,13 @@ export const getBalance = async (): Promise<{ totalBalance: { Amount: number; Cu
   let balance: { totalBalance: { Amount: number; Currency: string }[]; userBalance: { id: string; name: string; balances: { currency: string; amount: number }[] }[] } = { totalBalance: [], userBalance: [] };
   try {
     await db.withTransactionAsync(async () => {
-      const result = await db.getAllAsync(`SELECT * FROM balance;`) as { id: string; userId:string; name: string; currency: string; amount: number }[];
+      const result = await db.getAllAsync(`SELECT * FROM balance;`) as { id: string; userId:string; name: string; currency: string; balance: number }[];
       balance = await convertToBalanceFormat(result) as { totalBalance: { Amount: number; Currency: string }[]; userBalance: { id: string; name: string; balances: { currency: string; amount: number }[] }[] };
     });
   } catch (error) {
     console.error("Error fetching balance:", error);
   }
+  console.log('Balance fetched:', balance);
   return balance;
 };
 
@@ -161,10 +164,13 @@ export const clearUserData = async () => {
   await db.withTransactionAsync(async () => {
     await db.execAsync(`DELETE FROM users;`);
     await db.execAsync(`DELETE FROM expenses;`);
+    await db.execAsync(`DELETE FROM balance;`);
+    console.log(await getUser());
+    console.log('User data cleared');
   });
 };
 
-const convertToBalanceFormat = async (data: { id: string; userId: string; name: string; currency: string; amount: number }[]) =>{
+const convertToBalanceFormat = async (data: { id: string; userId: string; name: string; currency: string; balance: number }[]) =>{
   // Group by user for userBalance
   const userMap: Record<string, { id: string; name: string; balances: { currency: string; amount: number }[] }> = {};
   // Group by currency for totalBalance
@@ -172,16 +178,18 @@ const convertToBalanceFormat = async (data: { id: string; userId: string; name: 
 
   data.forEach(item => {
     // Build userBalance
+    //console.log('Item:', item);
     if (!userMap[item.userId]) {
       userMap[item.userId] = { id: item.userId, name: item.name, balances: [] };
     }
-    userMap[item.userId].balances.push({ currency: item.currency, amount: item.amount });
+    userMap[item.userId].balances.push({ currency: item.currency, amount: item.balance });
 
     // Build totalBalance
     if (!currencyMap[item.currency]) {
       currencyMap[item.currency] = 0;
     }
-    currencyMap[item.currency] += item.amount;
+    currencyMap[item.currency] += item.balance;
+    //console.log('Currency Map:', currencyMap);
   });
 
   const userBalance = Object.values(userMap);

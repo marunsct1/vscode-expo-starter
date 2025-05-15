@@ -10,8 +10,8 @@ const getToken = async () => {
 
 const setToken = async (token: string) => {
     AsyncStorage.setItem('token', token);
-    const apiKey = await getApiKey(token);
-    AsyncStorage.setItem('apiKey', apiKey);
+    await getApiKey(token);
+   
     console.log('Token and API key set successfully');
 };
 
@@ -32,6 +32,7 @@ const getApiKey = async (token: string) => {
         body: JSON.stringify({consumer_name: "MobileApp"}),
     });
     const {apiKey} = await response.json();
+    AsyncStorage.setItem('apiKey', apiKey);
     return apiKey;
 };
 
@@ -72,7 +73,7 @@ const authHeaders = async () => {
  */
 const fetchWithAuth = async (url: string, options: RequestInit) => {
     const token = await getToken();
-    console.log('Token:', token);
+    //console.log('Token:', token);
     const apiKey = await getLocalApiKey();
     const optionsReq = {
         ...options,
@@ -82,7 +83,7 @@ const fetchWithAuth = async (url: string, options: RequestInit) => {
             Authorization: `Bearer ${token}`,
             'x-api-key': apiKey   },
     }
-    console.log('Options:', optionsReq);
+    //console.log('Options:', optionsReq);
     return fetch( baseUrl + url, optionsReq);
 };
 
