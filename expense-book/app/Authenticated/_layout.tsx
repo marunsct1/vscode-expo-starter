@@ -1,15 +1,14 @@
-import fetchApiData from '@/features/backend/initialDataAPIFetch';
 import { Ionicons } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 import { createDrawerNavigator, DrawerNavigationProp } from '@react-navigation/drawer';
 import { Slot, useNavigation } from 'expo-router';
-import { useEffect } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUser } from '../../database/db';
-import { setUser } from '../../features/context/contextSlice';
 import { useTheme } from '../ThemeContext'; // Import the theme context
 import Account from './account';
 import Settings from './settings';
+
 '../../features/backend/initialDataAPIFetch';
 const Drawer = createDrawerNavigator();
 
@@ -17,9 +16,17 @@ export default function AuthenticatedLayout() {
   const theme = useTheme(); // Access the theme
   const user = useSelector((state: any) => state.context.user)
   const dispatch = useDispatch()
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOffline(!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
-
+    <>
       <Drawer.Navigator
         screenOptions={{
           drawerStyle: { backgroundColor: theme.colors.background }, // Drawer background color
@@ -67,8 +74,23 @@ export default function AuthenticatedLayout() {
           component={Account} // Load the account screen
         />
       </Drawer.Navigator>
-  
-
+      {/* Offline indicator below header */}
+      {isOffline && (
+        <View style={{
+          backgroundColor: '#ffcc00',
+          padding: 4,
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'absolute',
+          top: 56, // Adjust if your header height is different
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}>
+          <Text style={{ color: '#333', fontSize: 12 }}>Your device is offline</Text>
+        </View>
+      )}
+    </>
   );
 }
 

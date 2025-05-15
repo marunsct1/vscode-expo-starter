@@ -42,6 +42,8 @@ const fetchApiData = async (dispatch, user) => {
           await saveBalance(data);
           dispatch(setTotalExpenses(await getBalance()));
         }
+      } else {
+        
       }
     }
   } catch (error) {

@@ -1,11 +1,13 @@
 // filepath: /workspaces/vscode-expo-starter/expense-book/database/db.ts
+import NetInfo from '@react-native-community/netinfo';
 import * as SQLite from 'expo-sqlite';
+import { syncPendingActions } from '../features/backend/syncDevicetoDB';
 
 if (!SQLite.openDatabaseSync) {
   throw new Error("The 'openDatabaseSync' method is not available in the current version of expo-sqlite.");
 }
 
-const db = SQLite.openDatabaseSync('expenseBook.db');
+export const db = SQLite.openDatabaseSync('expenseBook.db');
 
 export const initializeDatabase = async () => {
   // await db.withTransactionAsync(async () => {
@@ -40,6 +42,8 @@ export const initializeDatabase = async () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         userId TEXT UNIQUE,
         name TEXT,
+        image_url TEXT,
+        user_name TEXT,
         currency TEXT,
         balance REAL
       );`,
@@ -50,7 +54,16 @@ export const initializeDatabase = async () => {
         currency TEXT,
         date TEXT,
         description TEXT,
+        image_url TEXT,
         FOREIGN KEY (userId) REFERENCES users (userId)
+      );`,
+      `CREATE TABLE IF NOT EXISTS sync_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        action TEXT, -- 'add', 'update', 'delete'
+        entity TEXT, -- e.g., 'expense', 'friend'
+        url TEXT, -- URL for the API endpoint
+        options TEXT, -- JSON string of the request options with headers and body
+        created_at TEXT
       );`
     ];
 
@@ -169,6 +182,24 @@ export const clearUserData = async () => {
     console.log('User data cleared');
   });
 };
+
+export const queueSyncAction = async (
+  action: string,
+  entity: string,
+  url: string,
+  options: any
+) => {
+  await db.runAsync(
+    `INSERT INTO sync_queue (action, entity, url, options, created_at) VALUES (?, ?, ?, ?, ?);`,
+    [action, entity, url, JSON.stringify(options), new Date().toISOString()]
+  );
+  // After queuing, try to sync if online
+  const state = await NetInfo.fetch();
+  if (state.isConnected) {
+    await syncPendingActions();
+  }
+};
+
 
 const convertToBalanceFormat = async (data: { id: string; userId: string; name: string; currency: string; balance: number }[]) =>{
   // Group by user for userBalance

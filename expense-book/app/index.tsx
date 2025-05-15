@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -9,6 +10,7 @@ import fetchApiData from '../features/backend/initialDataAPIFetch';
 import { setUserAndGetState } from '../features/context/contextThunks';
 import { getApiKey } from './authContext';
 import { store } from './store';
+import {syncPendingActions} from '../features/backend/syncDevicetoDB';
 
 function AppContent() {
   const router = useRouter();
@@ -87,6 +89,15 @@ function AppContent() {
     };
     checkLoginStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        syncPendingActions(); // Try to sync when online
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   return (
